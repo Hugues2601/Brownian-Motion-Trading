@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[84]:
+# In[90]:
 
 
 # Cellule 1
+import os
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State, ALL
@@ -39,7 +40,7 @@ initial_data = {
 }
 
 
-# In[85]:
+# In[91]:
 
 
 # Cellule 2
@@ -147,7 +148,7 @@ app.layout = html.Div(
 )
 
 
-# In[86]:
+# In[92]:
 
 
 # Cellule 3
@@ -202,7 +203,7 @@ def adjust_stock_price(current_price, news):
         return current_price * (1 - random.uniform(0.15, 0.3))
 
 
-# In[87]:
+# In[93]:
 
 
 # Cellule 4
@@ -343,7 +344,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
     return data, list(reversed(data['transactions'])), list(reversed(data['news'])), portfolio_value_text, long_clicks_state, short_clicks_state, positions_table_data, close_buttons
 
 
-# In[88]:
+# In[94]:
 
 
 #Cellule 5
@@ -390,18 +391,11 @@ def update_graph_scatter(data, relayoutData):
     return figure
 
 
-# In[83]:
+# In[95]:
 
 
-# Cellule 6
 if __name__ == '__main__':
-    app.run_server(debug=True)
-
-
-# In[ ]:
-
-
-
+    app.run_server(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8050)))
 
 
 # In[ ]:
