@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[22]:
+# In[59]:
 
 
 # Cellule 1
@@ -40,7 +40,7 @@ initial_data = {
 }
 
 
-# In[23]:
+# In[60]:
 
 
 # Cellule 2
@@ -55,7 +55,7 @@ app.layout = html.Div([
 # Page d'accueil
 index_page = html.Div(
     [
-        html.H1("Bienvenue dans la Simulation de Trading", style={'textAlign': 'center', 'color': '#4CAF50'}),
+        html.H1("Brownian Motion Simulation", style={'textAlign': 'center', 'color': '#4CAF50'}),
         html.Button('Start', id='start-button', style={'display': 'block', 'margin': 'auto', 'background-color': '#4CAF50', 'color': 'white', 'padding': '10px 20px', 'fontSize': '20px'}),
     ],
     style={'textAlign': 'center', 'padding': '50px'}
@@ -64,11 +64,150 @@ index_page = html.Div(
 # Page de simulation
 simulation_page = html.Div(
     [
-        dcc.Graph(id='live-graph', animate=True),
-        dcc.Interval(
-            id='graph-update',
-            interval=2*1000,  # in milliseconds
-            n_intervals=0
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dcc.Graph(id='live-graph', animate=True),
+                        dcc.Interval(
+                            id='graph-update',
+                            interval=2*1000,  # in milliseconds
+                            n_intervals=0
+                        )
+                    ],
+                    style={'width': '66%', 'display': 'inline-block', 'verticalAlign': 'top'}
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                dash_table.DataTable(
+                                    id='positions-table',
+                                    columns=[
+                                        {'name': 'Type', 'id': 'type'},
+                                        {'name': 'Shares', 'id': 'shares'},
+                                        {'name': 'Open Price', 'id': 'open_price'},
+                                        {'name': 'Current Price', 'id': 'current_price'},
+                                        {'name': 'Profit/Loss', 'id': 'profit_loss'}
+                                    ],
+                                    data=[],
+                                    row_deletable=True,
+                                    style_table={'margin-top': '20px'},
+                                    style_header={
+                                        'backgroundColor': 'rgb(230, 230, 230)',
+                                        'fontWeight': 'bold'
+                                    },
+                                    style_cell={'textAlign': 'center', 'padding': '10px'},
+                                    style_data_conditional=[
+                                        {
+                                            'if': {
+                                                'filter_query': '{profit_loss} > 0',
+                                                'column_id': 'profit_loss'
+                                            },
+                                            'color': 'green',
+                                            'fontWeight': 'bold'
+                                        },
+                                        {
+                                            'if': {
+                                                'filter_query': '{profit_loss} < 0',
+                                                'column_id': 'profit_loss'
+                                            },
+                                            'color': 'red',
+                                            'fontWeight': 'bold'
+                                        }
+                                    ],
+                                ),
+                                html.Div(id='close-buttons-container', style={'textAlign': 'center'}),
+                            ],
+                            style={'marginBottom': '30px'}
+                        ),
+                        dash_table.DataTable(
+                            id='news-table',
+                            columns=[
+                                {'name': 'Timestamp', 'id': 'timestamp'},
+                                {'name': 'Type', 'id': 'type'},
+                                {'name': 'Impact', 'id': 'impact'}
+                            ],
+                            data=[],
+                            style_table={'margin-top': '20px'},
+                            style_header={
+                                'backgroundColor': 'rgb(230, 230, 230)',
+                                'fontWeight': 'bold'
+                            },
+                            style_cell={'textAlign': 'center', 'padding': '10px'},
+                            style_data_conditional=[
+                                {
+                                    'if': {
+                                        'filter_query': '{impact} = "positive"'
+                                    },
+                                    'backgroundColor': 'lightgreen',
+                                    'color': 'black'
+                                },
+                                {
+                                    'if': {
+                                        'filter_query': '{impact} = "negative"'
+                                    },
+                                    'backgroundColor': 'lightcoral',
+                                    'color': 'black'
+                                }
+                            ],
+                            sort_action='native'
+                        )
+                    ],
+                    style={'width': '33%', 'display': 'inline-block', 'verticalAlign': 'top'}
+                ),
+            ],
+            style={'display': 'flex', 'width': '100%'}
+        ),
+        html.Div(
+            [
+                html.Div(id='portfolio-value', style={'fontWeight': 'bold', 'margin-top': '20px', 'fontSize': '20px', 'textAlign': 'center'}),
+                html.Div(
+                    [
+                        dcc.Input(id='shares-input', type='number', value=100, min=1, step=1, style={'margin-right': '10px', 'padding': '5px', 'width': '100px'}),
+                        html.Button('Long', id='long-button', n_clicks=0, style={'margin-right': '10px', 'background-color': '#4CAF50', 'color': 'white'}),
+                        html.Button('Short', id='short-button', n_clicks=0, style={'background-color': '#f44336', 'color': 'white'})
+                    ],
+                    style={'padding': '10px', 'textAlign': 'center'}
+                ),
+                dash_table.DataTable(
+                    id='transaction-table',
+                    columns=[
+                        {'name': 'Numéro de Transaction', 'id': 'transaction_id'},
+                        {'name': 'Heure de la Transaction', 'id': 'timestamp'},
+                        {'name': 'Prix de la Transaction', 'id': 'price'},
+                        {'name': 'Volume', 'id': 'volume'},
+                        {'name': 'Type de Transaction', 'id': 'transaction_type'},
+                        {'name': 'Type de Marché', 'id': 'market_type'},
+                        {'name': 'Type d\'Ordre', 'id': 'order_type'}
+                    ],
+                    data=[],
+                    style_table={'margin-top': '20px'},
+                    style_header={
+                        'backgroundColor': 'rgb(230, 230, 230)',
+                        'fontWeight': 'bold'
+                    },
+                    style_cell={'textAlign': 'center', 'padding': '10px'},
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'filter_query': '{transaction_type} = "Buy"'
+                            },
+                            'backgroundColor': 'green',
+                            'color': 'white'
+                        },
+                        {
+                            'if': {
+                                'filter_query': '{transaction_type} = "Sell"'
+                            },
+                            'backgroundColor': 'red',
+                            'color': 'white'
+                        }
+                    ],
+                    sort_action='native'
+                )
+            ],
+            style={'width': '100%', 'textAlign': 'center', 'padding': '20px'}
         ),
         html.Div(
             [
@@ -80,120 +219,6 @@ simulation_page = html.Div(
         dcc.Store(id='ohlc-data', data=initial_data),
         dcc.Store(id='long-clicks', data=0),
         dcc.Store(id='short-clicks', data=0),
-        html.Div(id='portfolio-value', style={'fontWeight': 'bold', 'margin-top': '20px', 'fontSize': '20px', 'textAlign': 'center'}),
-        html.Div(
-            [
-                dcc.Input(id='shares-input', type='number', value=100, min=1, step=1, style={'margin-right': '10px', 'padding': '5px', 'width': '100px'}),
-                html.Button('Long', id='long-button', n_clicks=0, style={'margin-right': '10px', 'background-color': '#4CAF50', 'color': 'white'}),
-                html.Button('Short', id='short-button', n_clicks=0, style={'background-color': '#f44336', 'color': 'white'})
-            ],
-            style={'padding': '10px', 'textAlign': 'center'}
-        ),
-        dash_table.DataTable(
-            id='positions-table',
-            columns=[
-                {'name': 'Type', 'id': 'type'},
-                {'name': 'Shares', 'id': 'shares'},
-                {'name': 'Open Price', 'id': 'open_price'},
-                {'name': 'Current Price', 'id': 'current_price'},
-                {'name': 'Profit/Loss', 'id': 'profit_loss'}
-            ],
-            data=[],
-            row_deletable=True,
-            style_table={'margin-top': '20px'},
-            style_header={
-                'backgroundColor': 'rgb(230, 230, 230)',
-                'fontWeight': 'bold'
-            },
-            style_cell={'textAlign': 'center', 'padding': '10px'},
-            style_data_conditional=[
-                {
-                    'if': {
-                        'filter_query': '{profit_loss} > 0',
-                        'column_id': 'profit_loss'
-                    },
-                    'color': 'green',
-                    'fontWeight': 'bold'
-                },
-                {
-                    'if': {
-                        'filter_query': '{profit_loss} < 0',
-                        'column_id': 'profit_loss'
-                    },
-                    'color': 'red',
-                    'fontWeight': 'bold'
-                }
-            ],
-        ),
-        html.Div(id='close-buttons-container', style={'textAlign': 'center'}),
-        dash_table.DataTable(
-            id='news-table',
-            columns=[
-                {'name': 'Timestamp', 'id': 'timestamp'},
-                {'name': 'Type', 'id': 'type'},
-                {'name': 'Impact', 'id': 'impact'}
-            ],
-            data=[],
-            style_table={'margin-top': '20px'},
-            style_header={
-                'backgroundColor': 'rgb(230, 230, 230)',
-                'fontWeight': 'bold'
-            },
-            style_cell={'textAlign': 'center', 'padding': '10px'},
-            style_data_conditional=[
-                {
-                    'if': {
-                        'filter_query': '{impact} = "positive"'
-                    },
-                    'backgroundColor': 'lightgreen',
-                    'color': 'black'
-                },
-                {
-                    'if': {
-                        'filter_query': '{impact} = "negative"'
-                    },
-                    'backgroundColor': 'lightcoral',
-                    'color': 'black'
-                }
-            ],
-            sort_action='native'
-        ),
-        dash_table.DataTable(
-            id='transaction-table',
-            columns=[
-                {'name': 'Numéro de Transaction', 'id': 'transaction_id'},
-                {'name': 'Heure de la Transaction', 'id': 'timestamp'},
-                {'name': 'Prix de la Transaction', 'id': 'price'},
-                {'name': 'Volume', 'id': 'volume'},
-                {'name': 'Type de Transaction', 'id': 'transaction_type'},
-                {'name': 'Type de Marché', 'id': 'market_type'},
-                {'name': 'Type d\'Ordre', 'id': 'order_type'}
-            ],
-            data=[],
-            style_table={'margin-top': '20px'},
-            style_header={
-                'backgroundColor': 'rgb(230, 230, 230)',
-                'fontWeight': 'bold'
-            },
-            style_cell={'textAlign': 'center', 'padding': '10px'},
-            style_data_conditional=[
-                {
-                    'if': {
-                        'filter_query': '{transaction_type} = "Buy"'
-                    },
-                    'backgroundColor': 'green',
-                    'color': 'white'
-                },
-                {
-                    'if': {
-                        'filter_query': '{transaction_type} = "Sell"'
-                    },
-                    'backgroundColor': 'red',
-                    'color': 'white'
-                }
-            ],
-            sort_action='native'
-        )
     ],
     style={
         'fontFamily': 'Arial, sans-serif',
@@ -220,7 +245,7 @@ def start_simulation(n_clicks):
     return '/'
 
 
-# In[24]:
+# In[61]:
 
 
 # Cellule 3
@@ -276,7 +301,7 @@ def adjust_stock_price(current_price, news):
     return current_price
 
 
-# In[25]:
+# In[62]:
 
 
 # Cellule 4
@@ -417,7 +442,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
     return data, list(reversed(data['transactions'])), list(reversed(data['news'])), portfolio_value_text, long_clicks_state, short_clicks_state, positions_table_data, close_buttons
 
 
-# In[26]:
+# In[63]:
 
 
 # Cellule 5
@@ -466,7 +491,7 @@ def update_graph_scatter(data, relayoutData):
     return figure
 
 
-# In[29]:
+# In[64]:
 
 
 #if __name__ == '__main__':
