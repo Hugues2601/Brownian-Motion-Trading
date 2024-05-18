@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[90]:
+# In[22]:
 
 
 # Cellule 1
@@ -40,13 +40,29 @@ initial_data = {
 }
 
 
-# In[91]:
+# In[23]:
 
 
 # Cellule 2
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
 
-app.layout = html.Div(
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    html.Div(id='page-content')
+])
+
+# Page d'accueil
+index_page = html.Div(
+    [
+        html.H1("Bienvenue dans la Simulation de Trading", style={'textAlign': 'center', 'color': '#4CAF50'}),
+        html.Button('Start', id='start-button', style={'display': 'block', 'margin': 'auto', 'background-color': '#4CAF50', 'color': 'white', 'padding': '10px 20px', 'fontSize': '20px'}),
+    ],
+    style={'textAlign': 'center', 'padding': '50px'}
+)
+
+# Page de simulation
+simulation_page = html.Div(
     [
         dcc.Graph(id='live-graph', animate=True),
         dcc.Interval(
@@ -56,22 +72,22 @@ app.layout = html.Div(
         ),
         html.Div(
             [
-                html.Button('Pause', id='pause-button', n_clicks=0, style={'margin-right': '10px'}),
-                html.Button('Resume', id='resume-button', n_clicks=0)
+                html.Button('Pause', id='pause-button', n_clicks=0, style={'margin-right': '10px', 'background-color': '#f44336', 'color': 'white'}),
+                html.Button('Resume', id='resume-button', n_clicks=0, style={'background-color': '#4CAF50', 'color': 'white'})
             ],
-            style={'padding': '10px'}
+            style={'padding': '10px', 'textAlign': 'center'}
         ),
         dcc.Store(id='ohlc-data', data=initial_data),
         dcc.Store(id='long-clicks', data=0),
         dcc.Store(id='short-clicks', data=0),
-        html.Div(id='portfolio-value', style={'fontWeight': 'bold', 'margin-top': '20px'}),
+        html.Div(id='portfolio-value', style={'fontWeight': 'bold', 'margin-top': '20px', 'fontSize': '20px', 'textAlign': 'center'}),
         html.Div(
             [
-                dcc.Input(id='shares-input', type='number', value=100, min=1, step=1, style={'margin-right': '10px'}),
-                html.Button('Long', id='long-button', n_clicks=0, style={'margin-right': '10px'}),
-                html.Button('Short', id='short-button', n_clicks=0)
+                dcc.Input(id='shares-input', type='number', value=100, min=1, step=1, style={'margin-right': '10px', 'padding': '5px', 'width': '100px'}),
+                html.Button('Long', id='long-button', n_clicks=0, style={'margin-right': '10px', 'background-color': '#4CAF50', 'color': 'white'}),
+                html.Button('Short', id='short-button', n_clicks=0, style={'background-color': '#f44336', 'color': 'white'})
             ],
-            style={'padding': '10px'}
+            style={'padding': '10px', 'textAlign': 'center'}
         ),
         dash_table.DataTable(
             id='positions-table',
@@ -84,9 +100,32 @@ app.layout = html.Div(
             ],
             data=[],
             row_deletable=True,
-            style_table={'margin-top': '20px'}
+            style_table={'margin-top': '20px'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            },
+            style_cell={'textAlign': 'center', 'padding': '10px'},
+            style_data_conditional=[
+                {
+                    'if': {
+                        'filter_query': '{profit_loss} > 0',
+                        'column_id': 'profit_loss'
+                    },
+                    'color': 'green',
+                    'fontWeight': 'bold'
+                },
+                {
+                    'if': {
+                        'filter_query': '{profit_loss} < 0',
+                        'column_id': 'profit_loss'
+                    },
+                    'color': 'red',
+                    'fontWeight': 'bold'
+                }
+            ],
         ),
-        html.Div(id='close-buttons-container'),
+        html.Div(id='close-buttons-container', style={'textAlign': 'center'}),
         dash_table.DataTable(
             id='news-table',
             columns=[
@@ -95,6 +134,12 @@ app.layout = html.Div(
                 {'name': 'Impact', 'id': 'impact'}
             ],
             data=[],
+            style_table={'margin-top': '20px'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            },
+            style_cell={'textAlign': 'center', 'padding': '10px'},
             style_data_conditional=[
                 {
                     'if': {
@@ -125,6 +170,12 @@ app.layout = html.Div(
                 {'name': 'Type d\'Ordre', 'id': 'order_type'}
             ],
             data=[],
+            style_table={'margin-top': '20px'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            },
+            style_cell={'textAlign': 'center', 'padding': '10px'},
             style_data_conditional=[
                 {
                     'if': {
@@ -144,11 +195,32 @@ app.layout = html.Div(
             sort_action='native'
         )
     ],
-    style={'textAlign': 'center'}
+    style={
+        'fontFamily': 'Arial, sans-serif',
+        'backgroundColor': '#f4f4f9',
+        'padding': '20px'
+    }
 )
 
+# Callback pour gérer la navigation
+@app.callback(Output('page-content', 'children'),
+              [Input('url', 'pathname')])
+def display_page(pathname):
+    if pathname == '/simulation':
+        return simulation_page
+    else:
+        return index_page
 
-# In[92]:
+# Callback pour le bouton "Start"
+@app.callback(Output('url', 'pathname'),
+              [Input('start-button', 'n_clicks')])
+def start_simulation(n_clicks):
+    if n_clicks:
+        return '/simulation'
+    return '/'
+
+
+# In[24]:
 
 
 # Cellule 3
@@ -201,9 +273,10 @@ def adjust_stock_price(current_price, news):
         return current_price * (1 + random.uniform(0.15, 0.3))
     elif news["impact"] == "negative":
         return current_price * (1 - random.uniform(0.15, 0.3))
+    return current_price
 
 
-# In[93]:
+# In[25]:
 
 
 # Cellule 4
@@ -255,17 +328,17 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
 
     data['transactions'].extend(transactions)
 
-    # Générer des nouvelles économiques toutes les 30 secondes en moyenne
-    if random.random() < (2 / 60):  # Probabilité de 2 nouvelles par minute
+    # Generate news approximately every 30 seconds
+    if random.random() < (2 / 60):  # Probability of 2 news items per minute
         news = generate_random_news()
         data['news'].append(news)
         new_close = adjust_stock_price(new_close, news)
         data['close'][-1] = new_close
 
-    # Gestion des transactions long/short
+    # Manage long/short transactions
     portfolio = data['portfolio']
     if 'long-button.n_clicks' in ctx.triggered[0]['prop_id']:
-        # Acheter des actions
+        # Buy shares
         shares_to_buy = shares_input
         total_cost = shares_to_buy * new_close
         if portfolio['balance'] >= total_cost:
@@ -281,7 +354,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
             data['positions'].append(position)
         long_clicks_state = long_clicks
     elif 'short-button.n_clicks' in ctx.triggered[0]['prop_id']:
-        # Shorter des actions
+        # Short shares
         shares_to_short = shares_input
         total_gain = shares_to_short * new_close
         portfolio['balance'] += total_gain
@@ -306,7 +379,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
                 portfolio['balance'] -= closed_position['shares'] * closed_position['current_price']
             break
 
-    # Mettre à jour les prix actuels et les profits/pertes des positions ouvertes
+    # Update current prices and profit/loss of open positions
     for position in data['positions']:
         position['current_price'] = new_close
         if position['type'] == 'Long':
@@ -314,7 +387,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
         else:  # Short
             position['profit_loss'] = (position['open_price'] - new_close) * position['shares']
 
-    # Mettre à jour la valeur du portefeuille
+    # Update portfolio value
     portfolio_value = portfolio['balance']
     for position in data['positions']:
         if position['type'] == 'Long':
@@ -324,7 +397,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
     portfolio['value'] = portfolio_value
     portfolio_value_text = f"Portfolio Value: {portfolio['value']:.2f} EUR | Current Stock Price: {new_close:.2f} EUR"
 
-    # Mettre à jour les données du tableau des positions ouvertes
+    # Update open positions table data
     positions_table_data = [
         {
             'type': position['type'],
@@ -335,19 +408,19 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
         } for position in data['positions']
     ]
 
-    # Générer des boutons "Close" pour chaque position
+    # Generate "Close" buttons for each position
     close_buttons = [
-        html.Button('Close', id={'type': 'close-button', 'index': i}, n_clicks=0)
+        html.Button('Close', id={'type': 'close-button', 'index': i}, n_clicks=0, style={'margin': '5px', 'background-color': '#f44336', 'color': 'white'})
         for i in range(len(data['positions']))
     ]
 
     return data, list(reversed(data['transactions'])), list(reversed(data['news'])), portfolio_value_text, long_clicks_state, short_clicks_state, positions_table_data, close_buttons
 
 
-# In[94]:
+# In[26]:
 
 
-#Cellule 5
+# Cellule 5
 @app.callback(
     Output('live-graph', 'figure'),
     [Input('ohlc-data', 'data')],
@@ -376,6 +449,8 @@ def update_graph_scatter(data, relayoutData):
             title='Price',
             range=[min(data['low']), max(data['high'])]
         ),
+        plot_bgcolor='#f4f4f9',
+        paper_bgcolor='#f4f4f9'
     )
 
     if relayoutData and 'xaxis.range[0]' in relayoutData:
@@ -389,6 +464,13 @@ def update_graph_scatter(data, relayoutData):
     }
     
     return figure
+
+
+# In[29]:
+
+
+#if __name__ == '__main__':
+    #app.run_server(debug=True, host='127.0.0.1', port=8050)
 
 
 # In[95]:
