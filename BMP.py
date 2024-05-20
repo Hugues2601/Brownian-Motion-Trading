@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[59]:
+# In[1]:
 
 
-# Cellule 1
 import os
 import dash
 from dash import dcc, html
@@ -16,14 +15,12 @@ from datetime import datetime
 import random
 import string
 
-# Initial parameters
-S0 = 100  # Initial stock price
-r = 0.05  # Interest rate
-sigma = 0.5  # Volatility
-dt = 1/252  # Time step (one day)
-initial_balance = 100_000  # Initial balance
+S0 = 100 
+r = 0.05 
+sigma = 0.5 
+dt = 1/252 
+initial_balance = 100_000 
 
-# Initialize OHLC data
 initial_data = {
     'open': [S0],
     'high': [S0],
@@ -40,10 +37,9 @@ initial_data = {
 }
 
 
-# In[60]:
+# In[2]:
 
 
-# Cellule 2
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 server = app.server
 
@@ -52,7 +48,6 @@ app.layout = html.Div([
     html.Div(id='page-content')
 ])
 
-# Page d'accueil
 index_page = html.Div(
     [
         html.H1("Brownian Motion Simulation", style={'textAlign': 'center', 'color': '#4CAF50'}),
@@ -61,7 +56,7 @@ index_page = html.Div(
     style={'textAlign': 'center', 'padding': '50px'}
 )
 
-# Page de simulation
+
 simulation_page = html.Div(
     [
         html.Div(
@@ -71,7 +66,7 @@ simulation_page = html.Div(
                         dcc.Graph(id='live-graph', animate=True),
                         dcc.Interval(
                             id='graph-update',
-                            interval=2*1000,  # in milliseconds
+                            interval=2*1000, 
                             n_intervals=0
                         )
                     ],
@@ -173,13 +168,13 @@ simulation_page = html.Div(
                 dash_table.DataTable(
                     id='transaction-table',
                     columns=[
-                        {'name': 'Numéro de Transaction', 'id': 'transaction_id'},
-                        {'name': 'Heure de la Transaction', 'id': 'timestamp'},
-                        {'name': 'Prix de la Transaction', 'id': 'price'},
+                        {'name': 'Transaction ID', 'id': 'transaction_id'},
+                        {'name': 'Timestamp', 'id': 'timestamp'},
+                        {'name': 'Price of the transaction', 'id': 'price'},
                         {'name': 'Volume', 'id': 'volume'},
-                        {'name': 'Type de Transaction', 'id': 'transaction_type'},
-                        {'name': 'Type de Marché', 'id': 'market_type'},
-                        {'name': 'Type d\'Ordre', 'id': 'order_type'}
+                        {'name': 'Type', 'id': 'transaction_type'},
+                        {'name': 'Market', 'id': 'market_type'},
+                        {'name': 'Order', 'id': 'order_type'}
                     ],
                     data=[],
                     style_table={'margin-top': '20px'},
@@ -227,7 +222,6 @@ simulation_page = html.Div(
     }
 )
 
-# Callback pour gérer la navigation
 @app.callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
@@ -236,7 +230,6 @@ def display_page(pathname):
     else:
         return index_page
 
-# Callback pour le bouton "Start"
 @app.callback(Output('url', 'pathname'),
               [Input('start-button', 'n_clicks')])
 def start_simulation(n_clicks):
@@ -245,7 +238,7 @@ def start_simulation(n_clicks):
     return '/'
 
 
-# In[61]:
+# In[3]:
 
 
 # Cellule 3
@@ -295,13 +288,13 @@ def generate_random_news():
 
 def adjust_stock_price(current_price, news):
     if news["impact"] == "positive":
-        return current_price * (1 + random.uniform(0.15, 0.3))
+        return current_price * (1 + random.uniform(0.1, 0.2))
     elif news["impact"] == "negative":
-        return current_price * (1 - random.uniform(0.15, 0.3))
+        return current_price * (1 - random.uniform(0.1, 0.2))
     return current_price
 
 
-# In[62]:
+# In[7]:
 
 
 # Cellule 4
@@ -312,7 +305,6 @@ def adjust_stock_price(current_price, news):
     [State('ohlc-data', 'data'), State('shares-input', 'value'), State('long-clicks', 'data'), State('short-clicks', 'data')]
 )
 def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_input, long_clicks_state, short_clicks_state):
-    # Context to check which input triggered the callback
     ctx = dash.callback_context
 
     last_close = data['close'][-1]
@@ -353,14 +345,12 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
 
     data['transactions'].extend(transactions)
 
-    # Generate news approximately every 30 seconds
-    if random.random() < (2 / 60):  # Probability of 2 news items per minute
+    if random.random() < (2 / 60):  
         news = generate_random_news()
         data['news'].append(news)
         new_close = adjust_stock_price(new_close, news)
         data['close'][-1] = new_close
 
-    # Manage long/short transactions
     portfolio = data['portfolio']
     if 'long-button.n_clicks' in ctx.triggered[0]['prop_id']:
         # Buy shares
@@ -379,7 +369,7 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
             data['positions'].append(position)
         long_clicks_state = long_clicks
     elif 'short-button.n_clicks' in ctx.triggered[0]['prop_id']:
-        # Short shares
+
         shares_to_short = shares_input
         total_gain = shares_to_short * new_close
         portfolio['balance'] += total_gain
@@ -393,26 +383,23 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
         data['positions'].append(position)
         short_clicks_state = short_clicks
 
-    # Check if a position's close button was clicked
     for i, n_click in enumerate(close_clicks):
         if n_click:
             closed_position = data['positions'].pop(i)
             if closed_position['type'] == 'Long':
                 portfolio['balance'] += closed_position['shares'] * closed_position['current_price']
                 portfolio['shares'] -= closed_position['shares']
-            else:  # Short
+            else: 
                 portfolio['balance'] -= closed_position['shares'] * closed_position['current_price']
             break
 
-    # Update current prices and profit/loss of open positions
     for position in data['positions']:
         position['current_price'] = new_close
         if position['type'] == 'Long':
             position['profit_loss'] = (new_close - position['open_price']) * position['shares']
-        else:  # Short
+        else: 
             position['profit_loss'] = (position['open_price'] - new_close) * position['shares']
 
-    # Update portfolio value
     portfolio_value = portfolio['balance']
     for position in data['positions']:
         if position['type'] == 'Long':
@@ -422,7 +409,6 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
     portfolio['value'] = portfolio_value
     portfolio_value_text = f"Portfolio Value: {portfolio['value']:.2f} EUR | Current Stock Price: {new_close:.2f} EUR"
 
-    # Update open positions table data
     positions_table_data = [
         {
             'type': position['type'],
@@ -433,7 +419,6 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
         } for position in data['positions']
     ]
 
-    # Generate "Close" buttons for each position
     close_buttons = [
         html.Button('Close', id={'type': 'close-button', 'index': i}, n_clicks=0, style={'margin': '5px', 'background-color': '#f44336', 'color': 'white'})
         for i in range(len(data['positions']))
@@ -442,10 +427,9 @@ def update_ohlc_data(n, long_clicks, short_clicks, close_clicks, data, shares_in
     return data, list(reversed(data['transactions'])), list(reversed(data['news'])), portfolio_value_text, long_clicks_state, short_clicks_state, positions_table_data, close_buttons
 
 
-# In[63]:
+# In[8]:
 
 
-# Cellule 5
 @app.callback(
     Output('live-graph', 'figure'),
     [Input('ohlc-data', 'data')],
@@ -491,7 +475,7 @@ def update_graph_scatter(data, relayoutData):
     return figure
 
 
-# In[64]:
+# In[9]:
 
 
 #if __name__ == '__main__':
